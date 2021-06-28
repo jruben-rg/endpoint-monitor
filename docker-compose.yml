@@ -1,0 +1,35 @@
+version: '3.8'
+services:
+  prometheus:
+    container_name: prometheus
+    image: prom/prometheus:v2.27.0
+    ports:
+      - ${PROMETHEUS_PORT}:${PROMETHEUS_PORT}
+    volumes:
+      - ./prometheus-config:/etc/prometheus/
+    restart: always
+
+  go-mon:
+    container_name: go-mon
+    build: go-mon/
+    depends_on:
+      - prometheus
+    volumes:
+      - ./config/conf.yml:/conf.yml
+    ports:
+      - ${METRICS_PORT}:${METRICS_PORT}
+    environment:
+      - METRICS_PORT=${METRICS_PORT}
+    command: [/conf.yml]
+
+  grafana:
+    container_name: grafana
+    image: grafana/grafana:7.3.7
+    depends_on:
+      - prometheus
+    volumes:
+      - ./grafana/provisioning/dashboards/:/etc/grafana/provisioning/dashboards/
+      - ./grafana/provisioning/datasources/:/etc/grafana/provisioning/datasources/
+      - ./grafana/dashboards/:/var/lib/grafana/dashboards/
+    ports:
+      - ${GRAFANA_PORT}:${GRAFANA_PORT}
